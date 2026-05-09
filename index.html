@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant de Stage Physiothérapie</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --deep-teal: #0a4d4e;
+            --warm-teal: #1a6b6d;
+            --gold: #d4a373;
+            --cream: #f9f6f2;
+            --off-white: #ffffff;
+            --charcoal: #2a2a2a;
+            --mid-gray: #6a6a6a;
+            --light-border: #e8e4df;
+            --success: #5a8f7b;
+            --error: #c1666b;
+            --shadow: rgba(10, 77, 78, 0.15);
+        }
+
+        body {
+            font-family: 'Crimson Pro', serif;
+            background: var(--cream);
+            color: var(--charcoal);
+            line-height: 1.7;
+        }
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--deep-teal) 0%, var(--warm-teal) 100%);
+            color: var(--off-white);
+            padding: 3rem 2rem 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(212, 163, 115, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 3rem;
+            font-weight: 600;
+            font-style: italic;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 0.75rem 1.5rem;
+            border-radius: 24px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sync-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse-sync 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-sync {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--off-white);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .main {
+            flex: 1;
+            max-width: 1200px;
+            margin: -2rem auto 0;
+            width: 100%;
+            padding: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card {
+            background: var(--off-white);
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 24px var(--shadow);
+            border: 1px solid var(--light-border);
+            transition: all 0.4s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 32px var(--shadow);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--light-border);
+        }
+
+        .card-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--deep-teal), var(--warm-teal));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            box-shadow: 0 4px 12px rgba(10, 77, 78, 0.2);
+        }
+
+        .card-title {
+            font-size: 2rem;
+            color: var(--deep-teal);
+            font-weight: 600;
+            font-style: italic;
+        }
+
+        .auth-container {
+            max-width: 480px;
+            margin: 4rem auto;
+            text-align: center;
+        }
+
+        .auth-card {
+            background: var(--off-white);
+            border-radius: 16px;
+            padding: 3rem;
+            box-shadow: 0 8px 32px var(--shadow);
+            border: 1px solid var(--light-border);
+        }
+
+        .auth-title {
+            font-size: 2.5rem;
+            color: var(--deep-teal);
+            margin-bottom: 1rem;
+            font-style: italic;
+        }
+
+        .auth-subtitle {
+            color: var(--mid-gray);
+            margin-bottom: 2.5rem;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--charcoal);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            border: 2px solid var(--light-border);
+            border-radius: 8px;
+            font-family: 'Crimson Pro', serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--cream);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--warm-teal);
+            background: var(--off-white);
+            box-shadow: 0 0 0 3px rgba(26, 107, 109, 0.1);
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--deep-teal), var(--warm-teal));
+            color: var(--off-white);
+            box-shadow: 0 4px 16px rgba(10, 77, 78, 0.25);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(10, 77, 78, 0.35);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--off-white);
+            color: var(--deep-teal);
+            border: 2px solid var(--deep-teal);
+        }
+
+        .btn-secondary:hover {
+            background: var(--deep-teal);
+            color: var(--off-white);
+        }
+
+        .btn-text {
+            background: none;
+            border: none;
+            color: var(--warm-teal);
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .record-section {
+            text-align: center;
+            padding: 3rem 0;
+        }
+
+        .record-btn {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 3px solid var(--gold);
+            background: linear-gradient(135deg, var(--deep-teal), var(--warm-teal));
+            color: var(--off-white);
+            font-size: 3.5rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 8px 32px rgba(10, 77, 78, 0.3);
+            position: relative;
+        }
+
+        .record-btn::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+
+        .record-btn:hover:not(.recording) {
+            transform: scale(1.08);
+            box-shadow: 0 12px 40px rgba(10, 77, 78, 0.4);
+        }
+
+        .record-btn:hover:not(.recording)::before {
+            opacity: 0.3;
+            inset: -12px;
+        }
+
+        .record-btn.recording {
+            animation: pulse-record 1.8s ease-in-out infinite;
+            background: linear-gradient(135deg, #c1666b, #d87e83);
+            border-color: #fff;
+        }
+
+        @keyframes pulse-record {
+            0%, 100% { 
+                box-shadow: 0 8px 32px rgba(193, 102, 107, 0.4);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 8px 32px rgba(193, 102, 107, 0.6), 0 0 0 24px rgba(193, 102, 107, 0.1);
+                transform: scale(1.05);
+            }
+        }
+
+        .record-status {
+            margin-top: 2rem;
+            font-size: 1.2rem;
+            color: var(--mid-gray);
+            font-family: 'Space Mono', monospace;
+            min-height: 2rem;
+        }
+
+        .record-status.recording {
+            color: var(--error);
+            font-weight: 700;
+        }
+
+        .transcript-box {
+            margin-top: 2.5rem;
+            padding: 2rem;
+            background: var(--cream);
+            border-radius: 12px;
+            border: 2px solid var(--light-border);
+            min-height: 140px;
+            font-size: 1.1rem;
+            line-height: 1.9;
+            transition: all 0.3s ease;
+        }
+
+        .transcript-box.empty {
+            color: var(--mid-gray);
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .transcript-box.active {
+            border-color: var(--warm-teal);
+            background: var(--off-white);
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 2.5rem;
+            border-bottom: 2px solid var(--light-border);
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            color: var(--mid-gray);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .tab.active {
+            color: var(--deep-teal);
+            border-bottom-color: var(--gold);
+        }
+
+        .tab:hover:not(.active) {
+            color: var(--warm-teal);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: var(--cream);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--light-border);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-4px);
+        }
+
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 600;
+            color: var(--deep-teal);
+            font-style: italic;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--mid-gray);
+            margin-top: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .entries-list {
+            margin-top: 2rem;
+        }
+
+        .entry-item {
+            background: var(--cream);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--gold);
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .entry-item:hover {
+            background: var(--off-white);
+            border-left-color: var(--warm-teal);
+            transform: translateX(4px);
+        }
+
+        .entry-date {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--mid-gray);
+            font-weight: 700;
+            min-width: 100px;
+        }
+
+        .entry-content {
+            flex: 1;
+            font-size: 1rem;
+        }
+
+        .entry-badge {
+            background: var(--deep-teal);
+            color: var(--off-white);
+            padding: 0.4rem 1rem;
+            border-radius: 16px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .alert {
+            padding: 1.25rem 1.75rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .alert-success {
+            background: rgba(90, 143, 123, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .alert-error {
+            background: rgba(193, 102, 107, 0.1);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            border: 3px solid var(--light-border);
+            border-top: 3px solid var(--deep-teal);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.25rem;
+            }
+
+            .header-top {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .main {
+                padding: 1rem;
+            }
+
+            .card {
+                padding: 1.75rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .tab {
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Configuration Supabase
+        const SUPABASE_URL = 'https://tigetqkvpkyitpdhjjlq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpZ2V0cWt2cGt5aXRwZGhqamxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNzcxNzMsImV4cCI6MjA5Mzg1MzE3M30.WfZkWyDMLSPnZGe4ZKxhnhW4jSIn6YHikDBKaFpFMcw';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Composant d'authentification
+        function AuthPage() {
+            const [isLogin, setIsLogin] = useState(true);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [nom, setNom] = useState('');
+            const [prenom, setPrenom] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [alert, setAlert] = useState(null);
+
+            const showAlert = (message, type) => {
+                setAlert({ message, type });
+                setTimeout(() => setAlert(null), 5000);
+            };
+
+            const handleAuth = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+
+                try {
+                    if (isLogin) {
+                        const { data, error } = await supabase.auth.signInWithPassword({
+                            email,
+                            password
+                        });
+                        
+                        if (error) throw error;
+                        showAlert('Connexion réussie!', 'success');
+                    } else {
+                        const { data, error } = await supabase.auth.signUp({
+                            email,
+                            password,
+                            options: {
+                                data: {
+                                    nom,
+                                    prenom
+                                }
+                            }
+                        });
+                        
+                        if (error) throw error;
+                        showAlert('Compte créé! Vérifiez votre email pour confirmer.', 'success');
+                    }
+                } catch (error) {
+                    showAlert(error.message, 'error');
+                }
+
+                setLoading(false);
+            };
+
+            return (
+                <div className="app">
+                    <div className="header">
+                        <div className="header-content">
+                            <h1>Assistant de Stage Physiothérapie</h1>
+                            <p className="subtitle">Synchronisé dans le cloud · Accessible partout</p>
+                        </div>
+                    </div>
+
+                    <div className="auth-container">
+                        {alert && (
+                            <div className={`alert alert-${alert.type}`}>
+                                {alert.message}
+                            </div>
+                        )}
+
+                        <div className="auth-card">
+                            <h2 className="auth-title">
+                                {isLogin ? 'Connexion' : 'Inscription'}
+                            </h2>
+                            <p className="auth-subtitle">
+                                {isLogin 
+                                    ? 'Accédez à vos données de stage' 
+                                    : 'Créez votre compte gratuitement'
+                                }
+                            </p>
+
+                            <form onSubmit={handleAuth}>
+                                {!isLogin && (
+                                    <>
+                                        <div className="form-group">
+                                            <label className="form-label">Prénom</label>
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={prenom}
+                                                onChange={(e) => setPrenom(e.target.value)}
+                                                required={!isLogin}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Nom</label>
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={nom}
+                                                onChange={(e) => setNom(e.target.value)}
+                                                required={!isLogin}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                <div className="form-group">
+                                    <label className="form-label">Email</label>
+                                    <input
+                                        type="email"
+                                        className="form-input"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Mot de passe</label>
+                                    <input
+                                        type="password"
+                                        className="form-input"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        minLength={6}
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    className="btn btn-primary"
+                                    disabled={loading}
+                                    style={{ width: '100%', marginTop: '1rem' }}
+                                >
+                                    {loading ? 'Chargement...' : (isLogin ? 'Se connecter' : 'Créer un compte')}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="btn-text"
+                                    onClick={() => setIsLogin(!isLogin)}
+                                    style={{ marginTop: '1rem' }}
+                                >
+                                    {isLogin 
+                                        ? "Pas de compte? Inscrivez-vous" 
+                                        : "Déjà un compte? Connectez-vous"
+                                    }
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Composant principal de l'application
+        function MainApp({ user }) {
+            const [isRecording, setIsRecording] = useState(false);
+            const [transcript, setTranscript] = useState('');
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [inputMode, setInputMode] = useState('text'); // 'voice' ou 'text'
+            const [data, setData] = useState({
+                journal: [],
+                cas: [],
+                competences: { transversales: [], expertise: [] }
+            });
+            const [activeTab, setActiveTab] = useState('record');
+            const [alert, setAlert] = useState(null);
+            
+            const recognitionRef = useRef(null);
+            const transcriptBufferRef = useRef('');
+
+            // Charger les données depuis Supabase
+            useEffect(() => {
+                loadDataFromSupabase();
+                initSpeechRecognition();
+            }, []);
+
+            const loadDataFromSupabase = async () => {
+                try {
+                    // Charger journal réflexif
+                    const { data: journalData } = await supabase
+                        .from('journal_reflexif')
+                        .select('*')
+                        .order('date', { ascending: false });
+
+                    // Charger cas cliniques
+                    const { data: casData } = await supabase
+                        .from('cas_cliniques')
+                        .select('*')
+                        .order('date', { ascending: false });
+
+                    // Charger compétences transversales
+                    const { data: transData } = await supabase
+                        .from('competences_transversales')
+                        .select('*')
+                        .order('date', { ascending: false });
+
+                    // Charger compétences expertise
+                    const { data: expertData } = await supabase
+                        .from('competences_expertise')
+                        .select('*')
+                        .order('date', { ascending: false });
+
+                    setData({
+                        journal: journalData || [],
+                        cas: casData || [],
+                        competences: {
+                            transversales: transData || [],
+                            expertise: expertData || []
+                        }
+                    });
+                } catch (error) {
+                    console.error('Erreur de chargement:', error);
+                    showAlert('Erreur lors du chargement des données', 'error');
+                }
+            };
+
+            const initSpeechRecognition = () => {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    recognitionRef.current = new SpeechRecognition();
+                    recognitionRef.current.continuous = true;
+                    recognitionRef.current.interimResults = true;
+                    recognitionRef.current.lang = 'fr-FR';
+
+                    recognitionRef.current.onresult = (event) => {
+                        let interimTranscript = '';
+                        let finalTranscript = '';
+
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const transcript = event.results[i][0].transcript;
+                            if (event.results[i].isFinal) {
+                                finalTranscript += transcript + ' ';
+                            } else {
+                                interimTranscript += transcript;
+                            }
+                        }
+
+                        if (finalTranscript) {
+                            transcriptBufferRef.current += finalTranscript;
+                            setTranscript(transcriptBufferRef.current);
+                        } else {
+                            setTranscript(transcriptBufferRef.current + interimTranscript);
+                        }
+                    };
+
+                    recognitionRef.current.onerror = (event) => {
+                        console.error('Erreur de reconnaissance vocale:', event.error);
+                        if (event.error === 'network' || event.error === 'not-allowed') {
+                            showAlert('🎤 Micro indisponible - Passez en mode Texte ci-dessus', 'error');
+                            setInputMode('text');
+                        } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                            showAlert(`Erreur micro: ${event.error}`, 'error');
+                        }
+                        setIsRecording(false);
+                    };
+
+                    recognitionRef.current.onend = () => {
+                        if (isRecording) {
+                            try {
+                                recognitionRef.current.start();
+                            } catch (e) {
+                                console.log('Fin normale de l\'enregistrement');
+                            }
+                        }
+                    };
+                }
+            };
+
+            const toggleRecording = () => {
+                if (!recognitionRef.current) {
+                    showAlert('🎤 Reconnaissance vocale non disponible - Utilisez le mode Texte', 'error');
+                    setInputMode('text');
+                    return;
+                }
+
+                if (!isRecording) {
+                    try {
+                        transcriptBufferRef.current = transcript;
+                        recognitionRef.current.start();
+                        setIsRecording(true);
+                        showAlert('🎤 Enregistrement démarré', 'success');
+                    } catch (error) {
+                        showAlert('Erreur de démarrage', 'error');
+                    }
+                } else {
+                    try {
+                        recognitionRef.current.stop();
+                        setIsRecording(false);
+                        showAlert('Enregistrement arrêté', 'success');
+                    } catch (error) {
+                        console.error('Erreur d\'arrêt:', error);
+                    }
+                }
+            };
+
+            const analyzeTranscript = async () => {
+                if (!transcript) return;
+
+                setIsProcessing(true);
+
+                try {
+                    const response = await fetch("https://api.anthropic.com/v1/messages", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "claude-sonnet-4-20250514",
+                            max_tokens: 4000,
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: `Tu es un assistant pour un stagiaire en physiothérapie. Analyse la transcription suivante de sa journée et extrais les informations structurées pour remplir 3 documents:
+
+1. JOURNAL RÉFLEXIF (doit contenir 2 activités par jour):
+   - Ce que j'ai fait (activités d'apprentissage)
+   - Ce que j'ai appris (connaissances, attitudes, habiletés)
+   - Ce que j'ai rencontré comme difficultés
+   - Ce vers quoi j'oriente mes apprentissages
+   - Réflexions/questions
+   - Compétence(s) concernée(s): Communication, Leadership, Collaboration, Érudition, Professionnalisme, Gestion, Expertise
+
+2. CAS CLINIQUES:
+   - Diagnostic ou raison de consultation
+   - Âge du patient
+   - Évaluations: O (Observer), EM (Évaluer avec Moniteur), ES (Évaluer Seul), TM (Traiter avec Moniteur), TS (Traiter Seul)
+   - Présence de conditions cardio-respiratoires (CR): oui/non
+   - Informations complémentaires
+
+3. COMPÉTENCES:
+   - Compétences transversales (Communication, Gestion, etc.)
+   - Compétences expertise (Évaluation, Traitement)
+   - Niveau d'autonomie
+
+Transcription:
+"${transcript}"
+
+Réponds UNIQUEMENT en JSON:
+{
+  "journal": [{"activite": "...", "appris": "...", "difficultes": "...", "orientation": "...", "reflexions": "...", "competences": ["..."]}],
+  "cas": [{"diagnostic": "...", "age": "...", "evaluation_o": false, "evaluation_em": true, "evaluation_es": false, "traitement_tm": true, "traitement_ts": false, "conditions_cr": true, "informations_complementaires": "..."}],
+  "competences": {
+    "transversales": [{"categorie": "communication", "experience": "...", "niveau_autonomie": "seul", "nb_fois": 1}],
+    "expertise": [{"type": "evaluation", "sous_categorie": "bilan_musculosquelettique", "experience": "...", "niveau_autonomie": "observer", "nb_cas": "A"}]
+  }
+}`
+                                }
+                            ]
+                        })
+                    });
+
+                    const result = await response.json();
+                    let analysisText = result.content[0].text;
+                    analysisText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                    const analysis = JSON.parse(analysisText);
+
+                    // Sauvegarder dans Supabase
+                    await saveAnalysisToSupabase(analysis);
+                    await loadDataFromSupabase();
+
+                    showAlert('Analyse terminée! Données synchronisées.', 'success');
+                    setTranscript('');
+                    transcriptBufferRef.current = '';
+                    setActiveTab('stats');
+                } catch (error) {
+                    console.error('Erreur d\'analyse:', error);
+                    showAlert('Erreur lors de l\'analyse', 'error');
+                }
+
+                setIsProcessing(false);
+            };
+
+            const saveAnalysisToSupabase = async (analysis) => {
+                try {
+                    // Sauvegarder journal réflexif
+                    if (analysis.journal && analysis.journal.length > 0) {
+                        const journalEntries = analysis.journal.map(entry => ({
+                            user_id: user.id,
+                            ...entry
+                        }));
+                        await supabase.from('journal_reflexif').insert(journalEntries);
+                    }
+
+                    // Sauvegarder cas cliniques
+                    if (analysis.cas && analysis.cas.length > 0) {
+                        const casEntries = analysis.cas.map(cas => ({
+                            user_id: user.id,
+                            stage: 1,
+                            ...cas
+                        }));
+                        await supabase.from('cas_cliniques').insert(casEntries);
+                    }
+
+                    // Sauvegarder compétences transversales
+                    if (analysis.competences.transversales && analysis.competences.transversales.length > 0) {
+                        const transEntries = analysis.competences.transversales.map(comp => ({
+                            user_id: user.id,
+                            stage: 1,
+                            ...comp
+                        }));
+                        await supabase.from('competences_transversales').insert(transEntries);
+                    }
+
+                    // Sauvegarder compétences expertise
+                    if (analysis.competences.expertise && analysis.competences.expertise.length > 0) {
+                        const expertEntries = analysis.competences.expertise.map(comp => ({
+                            user_id: user.id,
+                            stage: 1,
+                            ...comp
+                        }));
+                        await supabase.from('competences_expertise').insert(expertEntries);
+                    }
+                } catch (error) {
+                    console.error('Erreur de sauvegarde Supabase:', error);
+                    throw error;
+                }
+            };
+
+            const exportToExcel = async () => {
+                setIsProcessing(true);
+
+                try {
+                    const workbook = new ExcelJS.Workbook();
+                    
+                    // Feuille 1: Journal Réflexif
+                    const wsJournal = workbook.addWorksheet('Journal Réflexif');
+                    wsJournal.columns = [
+                        { header: 'Date', key: 'date', width: 15 },
+                        { header: 'Ce que j\'ai fait', key: 'activite', width: 30 },
+                        { header: 'Ce que j\'ai appris', key: 'appris', width: 30 },
+                        { header: 'Difficultés', key: 'difficultes', width: 30 },
+                        { header: 'Orientation', key: 'orientation', width: 30 },
+                        { header: 'Réflexions', key: 'reflexions', width: 30 },
+                        { header: 'Compétences', key: 'competences', width: 20 }
+                    ];
+                    data.journal.forEach(entry => {
+                        wsJournal.addRow({
+                            date: new Date(entry.date).toLocaleDateString('fr-CA'),
+                            activite: entry.activite,
+                            appris: entry.appris,
+                            difficultes: entry.difficultes,
+                            orientation: entry.orientation,
+                            reflexions: entry.reflexions,
+                            competences: entry.competences ? entry.competences.join(', ') : ''
+                        });
+                    });
+
+                    // Feuille 2: Cas Cliniques
+                    const wsCas = workbook.addWorksheet('Cas Cliniques');
+                    wsCas.columns = [
+                        { header: 'Stage', key: 'stage', width: 10 },
+                        { header: 'Date', key: 'date', width: 15 },
+                        { header: 'Diagnostic', key: 'diagnostic', width: 30 },
+                        { header: 'Âge', key: 'age', width: 10 },
+                        { header: 'O', key: 'o', width: 8 },
+                        { header: 'EM', key: 'em', width: 8 },
+                        { header: 'ES', key: 'es', width: 8 },
+                        { header: 'TM', key: 'tm', width: 8 },
+                        { header: 'TS', key: 'ts', width: 8 },
+                        { header: 'CR', key: 'cr', width: 8 },
+                        { header: 'Informations', key: 'infos', width: 30 }
+                    ];
+                    data.cas.forEach(cas => {
+                        wsCas.addRow({
+                            stage: cas.stage,
+                            date: new Date(cas.date).toLocaleDateString('fr-CA'),
+                            diagnostic: cas.diagnostic,
+                            age: cas.age,
+                            o: cas.evaluation_o ? 'X' : '',
+                            em: cas.evaluation_em ? 'X' : '',
+                            es: cas.evaluation_es ? 'X' : '',
+                            tm: cas.traitement_tm ? 'X' : '',
+                            ts: cas.traitement_ts ? 'X' : '',
+                            cr: cas.conditions_cr ? 'X' : '',
+                            infos: cas.informations_complementaires
+                        });
+                    });
+
+                    // Feuille 3: Compétences
+                    const wsComp = workbook.addWorksheet('Compétences');
+                    wsComp.columns = [
+                        { header: 'Type', key: 'type', width: 20 },
+                        { header: 'Catégorie', key: 'categorie', width: 25 },
+                        { header: 'Expérience', key: 'experience', width: 40 },
+                        { header: 'Autonomie', key: 'autonomie', width: 20 },
+                        { header: 'Date', key: 'date', width: 15 }
+                    ];
+                    
+                    data.competences.transversales.forEach(comp => {
+                        wsComp.addRow({
+                            type: 'Transversale',
+                            categorie: comp.categorie,
+                            experience: comp.experience,
+                            autonomie: comp.niveau_autonomie,
+                            date: new Date(comp.date).toLocaleDateString('fr-CA')
+                        });
+                    });
+
+                    data.competences.expertise.forEach(comp => {
+                        wsComp.addRow({
+                            type: 'Expertise',
+                            categorie: `${comp.type} - ${comp.sous_categorie || ''}`,
+                            experience: comp.experience,
+                            autonomie: comp.niveau_autonomie,
+                            date: new Date(comp.date).toLocaleDateString('fr-CA')
+                        });
+                    });
+
+                    const buffer = await workbook.xlsx.writeBuffer();
+                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Stage_Physio_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+
+                    showAlert('Export Excel réussi!', 'success');
+                } catch (error) {
+                    console.error('Erreur d\'export:', error);
+                    showAlert('Erreur lors de l\'export Excel', 'error');
+                }
+
+                setIsProcessing(false);
+            };
+
+            const handleLogout = async () => {
+                await supabase.auth.signOut();
+            };
+
+            const showAlert = (message, type) => {
+                setAlert({ message, type });
+                setTimeout(() => setAlert(null), 5000);
+            };
+
+            return (
+                <div className="app">
+                    <header className="header">
+                        <div className="header-content">
+                            <div className="header-top">
+                                <div>
+                                    <h1>Assistant de Stage</h1>
+                                    <p className="subtitle">Votre journal professionnel intelligent</p>
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                    <div className="user-badge">
+                                        <div className="sync-indicator"></div>
+                                        <span>{user.email}</span>
+                                    </div>
+                                    <button className="logout-btn" onClick={handleLogout}>
+                                        Déconnexion
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="main">
+                        {alert && (
+                            <div className={`alert alert-${alert.type}`}>
+                                <span>{alert.message}</span>
+                            </div>
+                        )}
+
+                        <div className="tabs">
+                            <button 
+                                className={`tab ${activeTab === 'record' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('record')}
+                            >
+                                ✍️ Raconter
+                            </button>
+                            <button 
+                                className={`tab ${activeTab === 'stats' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('stats')}
+                            >
+                                📊 Statistiques
+                            </button>
+                            <button 
+                                className={`tab ${activeTab === 'entries' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('entries')}
+                            >
+                                📝 Entrées
+                            </button>
+                        </div>
+
+                        {activeTab === 'record' && (
+                            <div className="card">
+                                <div className="card-header">
+                                    <div className="card-icon">✍️</div>
+                                    <h2 className="card-title">Racontez votre journée</h2>
+                                </div>
+
+                                <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+                                    <p style={{ color: 'var(--mid-gray)', marginBottom: '1rem' }}>
+                                        Choisissez votre méthode préférée
+                                    </p>
+                                    <div style={{ display: 'inline-flex', gap: '0.5rem', padding: '0.5rem', background: 'var(--cream)', borderRadius: '12px' }}>
+                                        <button
+                                            className={inputMode === 'voice' ? 'btn btn-primary' : 'btn btn-secondary'}
+                                            onClick={() => setInputMode('voice')}
+                                            style={{ padding: '0.75rem 1.5rem' }}
+                                        >
+                                            🎤 Voice
+                                        </button>
+                                        <button
+                                            className={inputMode === 'text' ? 'btn btn-primary' : 'btn btn-secondary'}
+                                            onClick={() => setInputMode('text')}
+                                            style={{ padding: '0.75rem 1.5rem' }}
+                                        >
+                                            ⌨️ Texte
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {inputMode === 'voice' ? (
+                                    <>
+                                        <div className="record-section">
+                                            <button 
+                                                className={`record-btn ${isRecording ? 'recording' : ''}`}
+                                                onClick={toggleRecording}
+                                                disabled={isProcessing}
+                                            >
+                                                {isRecording ? '⏹' : '🎙️'}
+                                            </button>
+                                            <div className={`record-status ${isRecording ? 'recording' : ''}`}>
+                                                {isRecording ? '● ENREGISTREMENT' : 'Cliquez pour enregistrer'}
+                                            </div>
+                                        </div>
+
+                                        {(transcript || isRecording) && (
+                                            <>
+                                                <div className={`transcript-box ${isRecording ? 'active' : ''}`}>
+                                                    {transcript || 'En écoute...'}
+                                                </div>
+                                                <div className="actions">
+                                                    <button 
+                                                        className="btn btn-primary"
+                                                        onClick={analyzeTranscript}
+                                                        disabled={isProcessing || isRecording || !transcript}
+                                                    >
+                                                        {isProcessing ? 'Analyse...' : '🤖 Analyser'}
+                                                    </button>
+                                                    <button 
+                                                        className="btn btn-secondary"
+                                                        onClick={() => {
+                                                            setTranscript('');
+                                                            transcriptBufferRef.current = '';
+                                                        }}
+                                                        disabled={isRecording}
+                                                    >
+                                                        ✖ Effacer
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {!transcript && !isRecording && (
+                                            <div className="transcript-box empty">
+                                                Votre transcription apparaîtra ici en temps réel
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <div style={{ marginBottom: '1.5rem' }}>
+                                            <label className="form-label" style={{ marginBottom: '0.75rem', display: 'block' }}>
+                                                Décrivez votre journée de stage
+                                            </label>
+                                            <textarea
+                                                className="form-input"
+                                                value={transcript}
+                                                onChange={(e) => setTranscript(e.target.value)}
+                                                placeholder="Exemple: Aujourd'hui j'ai vu un patient de 65 ans avec une fracture du tibia. J'ai fait l'évaluation initiale avec mon moniteur et ensuite j'ai appliqué de l'électrothérapie TENS. Le patient avait aussi des conditions cardiaques..."
+                                                rows={12}
+                                                style={{
+                                                    resize: 'vertical',
+                                                    minHeight: '200px',
+                                                    fontFamily: 'Crimson Pro, serif',
+                                                    fontSize: '1.1rem',
+                                                    lineHeight: '1.8'
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="actions">
+                                            <button 
+                                                className="btn btn-primary"
+                                                onClick={analyzeTranscript}
+                                                disabled={isProcessing || !transcript}
+                                            >
+                                                {isProcessing ? 'Analyse...' : '🤖 Analyser avec Claude'}
+                                            </button>
+                                            <button 
+                                                className="btn btn-secondary"
+                                                onClick={() => setTranscript('')}
+                                                disabled={isProcessing}
+                                            >
+                                                ✖ Effacer
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+
+                                {isProcessing && (
+                                    <div className="loading">
+                                        <div className="spinner"></div>
+                                        <p>Claude analyse votre journée...</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'stats' && (
+                            <div className="card">
+                                <div className="card-header">
+                                    <div className="card-icon">📊</div>
+                                    <h2 className="card-title">Statistiques</h2>
+                                </div>
+
+                                <div className="stats-grid">
+                                    <div className="stat-card">
+                                        <div className="stat-number">{data.journal.length}</div>
+                                        <div className="stat-label">Entrées journal</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-number">{data.cas.length}</div>
+                                        <div className="stat-label">Cas cliniques</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-number">
+                                            {data.competences.transversales.length + data.competences.expertise.length}
+                                        </div>
+                                        <div className="stat-label">Compétences</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-number">
+                                            {data.cas.filter(c => c.conditions_cr).length}
+                                        </div>
+                                        <div className="stat-label">Cas cardio-resp.</div>
+                                    </div>
+                                </div>
+
+                                <div className="actions">
+                                    <button className="btn btn-primary" onClick={exportToExcel}>
+                                        📥 Télécharger Excel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'entries' && (
+                            <>
+                                <div className="card">
+                                    <div className="card-header">
+                                        <div className="card-icon">📝</div>
+                                        <h2 className="card-title">Journal Réflexif</h2>
+                                    </div>
+                                    <div className="entries-list">
+                                        {data.journal.length === 0 ? (
+                                            <p style={{ textAlign: 'center', color: 'var(--mid-gray)', padding: '2rem' }}>
+                                                Aucune entrée pour le moment
+                                            </p>
+                                        ) : (
+                                            data.journal.slice(0, 10).map((entry, i) => (
+                                                <div key={entry.id} className="entry-item">
+                                                    <div className="entry-date">
+                                                        {new Date(entry.date).toLocaleDateString('fr-CA')}
+                                                    </div>
+                                                    <div className="entry-content">
+                                                        <strong>Activité:</strong> {entry.activite?.substring(0, 100)}...
+                                                    </div>
+                                                    {entry.competences && entry.competences[0] && (
+                                                        <div className="entry-badge">{entry.competences[0]}</div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="card">
+                                    <div className="card-header">
+                                        <div className="card-icon">🏥</div>
+                                        <h2 className="card-title">Cas Cliniques</h2>
+                                    </div>
+                                    <div className="entries-list">
+                                        {data.cas.length === 0 ? (
+                                            <p style={{ textAlign: 'center', color: 'var(--mid-gray)', padding: '2rem' }}>
+                                                Aucun cas documenté
+                                            </p>
+                                        ) : (
+                                            data.cas.slice(0, 10).map((cas, i) => (
+                                                <div key={cas.id} className="entry-item">
+                                                    <div className="entry-date">
+                                                        {new Date(cas.date).toLocaleDateString('fr-CA')}
+                                                    </div>
+                                                    <div className="entry-content">
+                                                        <strong>{cas.diagnostic}</strong> · {cas.age} ans
+                                                        {cas.conditions_cr && <span style={{ color: 'var(--gold)', marginLeft: '0.5rem' }}>● CR</span>}
+                                                    </div>
+                                                    <div className="entry-badge">Stage {cas.stage}</div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        // Composant racine
+        function App() {
+            const [session, setSession] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                // Vérifier la session au chargement
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                    setSession(session);
+                    setLoading(false);
+                });
+
+                // Écouter les changements de session
+                const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+                    setSession(session);
+                });
+
+                return () => subscription.unsubscribe();
+            }, []);
+
+            if (loading) {
+                return (
+                    <div className="loading" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="spinner"></div>
+                    </div>
+                );
+            }
+
+            return session ? <MainApp user={session.user} /> : <AuthPage />;
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
