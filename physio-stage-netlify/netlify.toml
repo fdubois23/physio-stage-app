@@ -1,6 +1,6 @@
 [build]
-  functions = "netlify/functions"
-  publish = "."
+  functions = "physio-stage-netlify/netlify/functions"
+  publish = "physio-stage-netlify"
 
 [build.environment]
   NODE_VERSION = "18"
