@@ -1245,7 +1245,42 @@
                                                 className="form-input"
                                                 value={transcript}
                                                 onChange={(e) => setTranscript(e.target.value)}
-                                                placeholder="Exemple: Aujourd'hui j'ai vu un patient de 65 ans avec une fracture du tibia. J'ai fait l'évaluation initiale avec mon moniteur et ensuite j'ai appliqué de l'électrothérapie TENS. Le patient avait aussi des conditions cardiaques..."
+                                                placeholder={`=== JOURNAL RÉFLEXIF ===
+
+1. Ce que j'ai fait (activités d'apprentissage):
+
+
+2. Ce que j'ai appris (connaissances, attitudes, habiletés):
+
+
+3. Difficultés rencontrées:
+
+
+4. Orientation de mes apprentissages:
+
+
+5. Réflexions/Questions:
+
+
+6. Compétences concernées: [Communication / Collaboration / Professionnalisme / Expertise / Leadership / Érudition / Gestion]
+
+
+=== CAS CLINIQUES ===
+
+Cas 1:
+- Diagnostic/Raison de consultation:
+- Âge:
+- Observer: [Oui/Non]
+- Évaluer avec moniteur: [Évaluation initiale / Réévaluation / Évaluation au congé]
+- Évaluer seul: [Évaluation initiale / Réévaluation / Évaluation au congé]
+- Traiter avec moniteur: [Oui/Non]
+- Traiter seul: [Oui/Non]
+- Conditions cardio-respiratoires: [Oui/Non]
+- Informations complémentaires:
+- Détails complets pour cahier (tout ce que j'ai fait):
+
+
+[Ajoutez Cas 2, Cas 3, etc. si nécessaire]`}
                                                 rows={12}
                                                 style={{
                                                     resize: 'vertical',
